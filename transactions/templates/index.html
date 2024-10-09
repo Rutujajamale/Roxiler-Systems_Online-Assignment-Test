@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        select, input, button {
+            margin: 10px 0;
+            padding: 8px;
+        }
+        h2 {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Transactions Dashboard</h1>
+
+    <label for="month">Select Month:</label>
+    <select id="month">
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3" selected>March</option>
+        <option value="4">April</option>
+        <option value="5">May</option> 
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+    </select>
+
+    <input type="text" id="search" placeholder="Search transactions" />
+    <button onclick="loadTransactions()">Search</button>
+
+    <table id="transactionsTable">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Date of Sale</th>
+                <th>Category</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <h2>Statistics</h2>
+    <div id="statistics"></div>
+
+    <h2>Bar Chart Data</h2>
+    <div id="barChartData"></div>
+
+    <h2>Pie Chart Data</h2>
+    <div id="pieChartData"></div>
+
+    <script>
+        function loadTransactions() {
+            const month = document.getElementById('month').value;
+            const search = document.getElementById('search').value;
+            const url = search 
+                ? `/api/transactions/?search=${search}&month=${month}`
+                : `/api/transactions/?month=${month}`;
+
+            axios.get(url)
+                .then(response => {
+                    const tableBody = document.querySelector('#transactionsTable tbody');
+                    tableBody.innerHTML = '';
+
+                    response.data.results.forEach(transaction => {
+                        const row = `<tr>
+                            <td>${transaction.product_title}</td>
+                            <td>${transaction.product_description}</td>
+                            <td>${transaction.price}</td>
+                            <td>${transaction.date_of_sale}</td>
+                            <td>${transaction.category}</td>
+                        </tr>`;
+                        tableBody.innerHTML += row;
+                    });
+                });
+        }
+
+        function loadStatistics() {
+            const month = document.getElementById('month').value;
+            axios.get(`/api/statistics/${month}/`)
+                .then(response => {
+                    document.getElementById('statistics').innerHTML = `
+                        <h3>Total Sales: ${response.data.total_sales}</h3>
+                        <h3>Total Sold: ${response.data.total_sold}</h3>
+                        <h3>Total Not Sold: ${response.data.total_not_sold}</h3>
+                    `;
+                });
+        }
+
+        function loadBarChartData() {
+            const month = document.getElementById('month').value;
+            axios.get(`/api/bar-chart/${month}/`)
+                .then(response => {
+                    const barChartDataDiv = document.getElementById('barChartData');
+                    barChartDataDiv.innerHTML = '<h3>Bar Chart Data</h3>';
+                    
+                    for (const [range, count] of Object.entries(response.data)) {
+                        barChartDataDiv.innerHTML += `<p>${range}: ${count}</p>`;
+                    }
+                });
+        }
+
+        function loadPieChartData() {
+            const month = document.getElementById('month').value;
+            axios.get(`/api/pie_chart_data/${month}/`)
+                .then(response => {
+                    const pieChartDataDiv = document.getElementById('pieChartData');
+                    pieChartDataDiv.innerHTML = '<h3>Pie Chart Data</h3>';
+                    
+                    for (const [category, count] of Object.entries(response.data)) {
+                        pieChartDataDiv.innerHTML += `<p>${category}: ${count}</p>`;
+                    }
+                });
+        }
+
+        // Load initial data
+        document.getElementById('month').addEventListener('change', () => {
+            loadTransactions();
+            loadStatistics();
+            loadBarChartData();
+            loadPieChartData();
+        });
+
+        document.querySelector('button').addEventListener('click', () => {
+            loadTransactions();
+            loadStatistics();
+            loadBarChartData();
+            loadPieChartData();
+        });
+
+        // Load data for the default month on page load
+        window.onload = () => {
+            loadTransactions();
+            loadStatistics();
+            loadBarChartData();
+            loadPieChartData();
+        };
+    </script>
+</body>
+</html>
